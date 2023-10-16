@@ -19,9 +19,9 @@ namespace LibraryManager.Tests.CRUDTests
 
             var createBook = await _bookService.CreateBookAsync(book);
 
-            var getBook = await _bookService.GetBookAsync(createBook.Id);
+            var getBook = await _bookService.GetBookAsync(createBook.Success.Id);
             Assert.IsNotNull(getBook, "Book with this id was not found");
-            AssertBookProperties(createBook, getBook);
+            AssertBookProperties(createBook.Success, getBook);
         }
     }
 }

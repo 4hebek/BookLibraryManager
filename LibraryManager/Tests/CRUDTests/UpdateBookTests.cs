@@ -27,7 +27,7 @@ namespace LibraryManager.Tests.CRUDTests
                 Author = "TestUpdated",
             };
 
-            var updateBook = await _bookService.UpdateBookAsync(createBook.Id, updatedBook);
+            var updateBook = await _bookService.UpdateBookAsync(createBook.Success.Id, updatedBook);
             Assert.IsNotNull(updateBook, "Book with this id was not found");
             AssertBookProperties(updatedBook, updateBook);
         }

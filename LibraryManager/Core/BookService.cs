@@ -19,7 +19,35 @@ namespace LibraryManager.Core
                 new MediaTypeWithQualityHeaderValue("application/json"));
         }
 
-        public async Task<Book> CreateBookAsync(Book book)
+        public async Task<Result<Book, Error>> CreateBookAsync(Book book)
+        {
+            _inMemoryBooks.Add(book);
+
+            //var newBook = new Book()
+            //{
+            //    Id = book.Id ?? new Random().Next(1, 1000),
+            //    Title = book.Title ?? "Book Title",
+            //    Description = book.Description ?? "Book Description",
+            //    Author = book.Author ?? "Book Author",
+            //};
+
+            HttpResponseMessage response = await _client.PostAsJsonAsync("books", book);
+            var status = response.StatusCode;
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                var bookResult = Newtonsoft.Json.JsonConvert.DeserializeObject<Book>(jsonResponse);
+                return Result<Book, Error>.SuccessResponse(bookResult, status);
+            }
+            else
+            {
+                var errorResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<Error>(jsonResponse);
+                return Result<Book, Error>.ErrorResponse(errorResponse, status);
+            }
+        }
+
+        public async Task<Book> ReadBook(Book book)
         {
             _inMemoryBooks.Add(book);
 
@@ -52,7 +80,7 @@ namespace LibraryManager.Core
         public async Task<HttpResponseMessage> DeleteBookAsync(int? bookId)
         {
             var book = _inMemoryBooks.FirstOrDefault(b => b.Id == bookId);
-            var response = await _client.DeleteAsync($"books/{book.Id.ToString()}");
+            var response = await _client.DeleteAsync($"books/{book.Id}");
 
             return response;
         }
