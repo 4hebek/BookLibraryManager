@@ -1,4 +1,5 @@
-﻿using LibraryManager.Core;
+﻿using FluentAssertions;
+using LibraryManager.Core;
 using LibraryManager.Core.Contracts;
 using NUnit.Framework;
 using System.Net;
@@ -13,11 +14,11 @@ namespace LibraryManager.Tests.CRUDTests
         {
             var bookId = new Random().Next(1, 10000);
             var createBook = await _bookService.CreateBook(id: bookId);
-            Assert.AreEqual(HttpStatusCode.OK, createBook.StatusCode);
+            createBook.StatusCode.Should().Be(HttpStatusCode.OK);
 
             var getBook = await _bookService.GetBookById(createBook.Success.Id);
-            Assert.IsNotNull(getBook);
-            Assert.AreEqual(HttpStatusCode.OK, getBook.StatusCode);
+            getBook.Should().NotBeNull();
+            getBook.StatusCode.Should().Be(HttpStatusCode.OK);
             AssertBookProperties(createBook.Success, getBook.Success);
         }
 
@@ -25,28 +26,30 @@ namespace LibraryManager.Tests.CRUDTests
         public async Task GetBookById_AfterDeletion_NotFound()
         {
             var bookId = new Random().Next(1, 1000);
+            var errorMessage = string.Format(Constants.NoBookFound, bookId);
 
             var createBook = await _bookService.CreateBook(id: bookId);
-            Assert.AreEqual(HttpStatusCode.OK, createBook.StatusCode);
+            createBook.StatusCode.Should().Be(HttpStatusCode.OK);
 
             var deleteBook = await _bookService.DeleteBook(createBook.Success.Id);
-            Assert.AreEqual(HttpStatusCode.NoContent, deleteBook.StatusCode);
+            deleteBook.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
             var getBook = await _bookService.GetBookById(createBook.Success.Id);
-            Assert.IsFalse(getBook.IsSuccess);
-            Assert.AreEqual(HttpStatusCode.NotFound, getBook.StatusCode);
-            Assert.AreEqual(string.Format(Constants.NoBookFound, bookId), getBook.Error.Message);
+            getBook.IsSuccess.Should().BeFalse();
+            getBook.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            getBook.Error.Message.Should().Be(errorMessage);
         }
 
         [Test]
         public async Task GetBookById_DoesNotExist_NotFound()
         {
             var nonExistingId = 107678;
+            var errorMessage = string.Format(Constants.NoBookFound, nonExistingId);
             var getBook = await _bookService.GetBookById(nonExistingId);
 
-            Assert.IsFalse(getBook.IsSuccess);
-            Assert.AreEqual(HttpStatusCode.NotFound, getBook.StatusCode);
-            Assert.AreEqual(string.Format(Constants.NoBookFound, nonExistingId), getBook.Error.Message);
+            getBook.IsSuccess.Should().BeFalse();
+            getBook.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            getBook.Error.Message.Should().Be(errorMessage);
         }     
     }
 }

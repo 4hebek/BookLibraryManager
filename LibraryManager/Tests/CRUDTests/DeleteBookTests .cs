@@ -1,5 +1,5 @@
-﻿using LibraryManager.Core;
-using LibraryManager.Core.Contracts;
+﻿using FluentAssertions;
+using LibraryManager.Core;
 using NUnit.Framework;
 using System.Net;
 
@@ -12,38 +12,39 @@ namespace LibraryManager.Tests.CRUDTests
         public async Task DeleteBook_NoContent()
         {
             var createBook = await _bookService.CreateBook();
-            Assert.AreEqual(HttpStatusCode.OK, createBook.StatusCode);
+            createBook.StatusCode.Should().Be(HttpStatusCode.OK);
 
             var deleteBook = await _bookService.DeleteBook(createBook.Success.Id);
-            Assert.AreEqual(HttpStatusCode.NoContent, deleteBook.StatusCode);
+            deleteBook.StatusCode.Should().Be(HttpStatusCode.NoContent);
         }
 
         [Test]
         public async Task DeleteBook_AlreadyDeleted_NotFound()
         {
             var bookId = new Random().Next(1, 10000);
-
+            var errorMessage = string.Format(Constants.NoBookFound, bookId);
             var createBook = await _bookService.CreateBook(id: bookId);
-            Assert.AreEqual(HttpStatusCode.OK, createBook.StatusCode);
+            createBook.StatusCode.Should().Be(HttpStatusCode.OK);
 
             var deleteBook = await _bookService.DeleteBook(createBook.Success.Id);
-            Assert.AreEqual(HttpStatusCode.NoContent, deleteBook.StatusCode);
+            deleteBook.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
             var secondDeleteBook = await _bookService.DeleteBook(createBook.Success.Id);
-            Assert.IsFalse(secondDeleteBook.IsSuccess);
-            Assert.AreEqual(HttpStatusCode.NotFound, secondDeleteBook.StatusCode);
-            Assert.AreEqual(string.Format(Constants.NoBookFound, bookId), secondDeleteBook.Error.Message);
+            secondDeleteBook.IsSuccess.Should().BeFalse();
+            secondDeleteBook.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            secondDeleteBook.Error.Message.Should().Be(errorMessage);
         }
 
         [Test]
         public async Task DeleteBook_NonExistingId_NotFound()
         {
             var nonExistingId = 1234;
+            var errorMessage = string.Format(Constants.NoBookFound, nonExistingId);
             var deleteBook = await _bookService.DeleteBook(nonExistingId);
-          
-            Assert.IsFalse(deleteBook.IsSuccess);
-            Assert.AreEqual(HttpStatusCode.NotFound, deleteBook.StatusCode);
-            Assert.AreEqual(string.Format(Constants.NoBookFound, nonExistingId), deleteBook.Error.Message);
+
+            deleteBook.IsSuccess.Should().BeFalse();
+            deleteBook.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            deleteBook.Error.Message.Should().Be(errorMessage);
         }
     }
 }

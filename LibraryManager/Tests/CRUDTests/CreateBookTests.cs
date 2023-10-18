@@ -1,4 +1,5 @@
-﻿using LibraryManager.Core;
+﻿using FluentAssertions;
+using LibraryManager.Core;
 using LibraryManager.Core.Contracts;
 using NUnit.Framework;
 using System.Net;
@@ -21,7 +22,7 @@ namespace LibraryManager.Tests.CRUDTests
             };
 
             var createBook = await _bookService.CreateBook(book);
-            Assert.AreEqual(HttpStatusCode.OK, createBook.StatusCode);
+            createBook.StatusCode.Should().Be(HttpStatusCode.OK);
             AssertBookProperties(book, createBook.Success);
         }
 
@@ -29,14 +30,15 @@ namespace LibraryManager.Tests.CRUDTests
         public async Task CreateBook_SameId_BadRequest()
         {
             var bookId = new Random().Next(1, 10000);
-
+            var errorMessage = string.Format(Constants.IdAlreadyExists, bookId);
             var createBook = await _bookService.CreateBook(id: bookId);
-            Assert.AreEqual(HttpStatusCode.OK, createBook.StatusCode);
+            createBook.StatusCode.Should().Be(HttpStatusCode.OK);
 
             var secondCreateBook = await _bookService.CreateBook(id: bookId);
-            Assert.IsFalse(secondCreateBook.IsSuccess);
-            Assert.AreEqual(HttpStatusCode.BadRequest, secondCreateBook.StatusCode);
-            Assert.AreEqual(string.Format(Constants.IdAlreadyExists, bookId), secondCreateBook.Error.Message);
+
+            secondCreateBook.IsSuccess.Should().BeFalse();
+            secondCreateBook.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            secondCreateBook.Error.Message.Should().Be(errorMessage);
         }
 
         [Test]
@@ -53,9 +55,10 @@ namespace LibraryManager.Tests.CRUDTests
             };
 
             var createBook = await _bookService.CreateBook(book);
-            Assert.IsFalse(createBook.IsSuccess);
-            Assert.AreEqual(HttpStatusCode.BadRequest, createBook.StatusCode);
-            Assert.AreEqual(Constants.AuthorRequired, createBook.Error.Message);
+
+            createBook.IsSuccess.Should().BeFalse();
+            createBook.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            createBook.Error.Message.Should().Be(Constants.AuthorRequired);
         }
 
         [Test]
@@ -64,9 +67,10 @@ namespace LibraryManager.Tests.CRUDTests
         public async Task CreateBook_InvalidId_BadRequest(int bookId)
         {
             var createBook = await _bookService.CreateBook(id: bookId);
-            Assert.IsFalse(createBook.IsSuccess);
-            Assert.AreEqual(HttpStatusCode.BadRequest, createBook.StatusCode);
-            Assert.AreEqual(Constants.InvalidId, createBook.Error.Message);
+
+            createBook.IsSuccess.Should().BeFalse();
+            createBook.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            createBook.Error.Message.Should().Be(Constants.InvalidId);
         }
 
         [Test]
@@ -76,17 +80,18 @@ namespace LibraryManager.Tests.CRUDTests
         public async Task CreateBook_InvalidTitle_BadRequest(string title)
         {
             var createBook = await _bookService.CreateBook(title: title);
-            Assert.IsFalse(createBook.IsSuccess);
-            Assert.AreEqual(HttpStatusCode.BadRequest, createBook.StatusCode);
-            Assert.AreEqual(Constants.TitleRequired, createBook.Error.Message);
+
+            createBook.IsSuccess.Should().BeFalse();
+            createBook.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            createBook.Error.Message.Should().Be(Constants.TitleRequired);
         }
 
         [Test]
         public async Task CreateBook_WithoutDescription_OK()
         {
             var createBook = await _bookService.CreateBook(description: null);
-            Assert.AreEqual(HttpStatusCode.OK, createBook.StatusCode);
-            Assert.AreEqual(null, createBook.Success.Description);
+            createBook.StatusCode.Should().Be(HttpStatusCode.OK);
+            createBook.Success.Description.Should().BeNull();
         }
 
         [Test]
@@ -96,9 +101,9 @@ namespace LibraryManager.Tests.CRUDTests
             var title = GenerateRandomString(101);
             var createBook = await _bookService.CreateBook(title: title);
 
-            Assert.IsFalse(createBook.IsSuccess);
-            Assert.AreEqual(HttpStatusCode.BadRequest, createBook.StatusCode);
-            Assert.AreEqual(Constants.TitleMaxCharacters, createBook.Error.Message);
+            createBook.IsSuccess.Should().BeFalse();
+            createBook.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            createBook.Error.Message.Should().Be(Constants.TitleMaxCharacters);
         }
 
         [Test]
@@ -108,9 +113,9 @@ namespace LibraryManager.Tests.CRUDTests
             var author = GenerateRandomString(30);
             var createBook = await _bookService.CreateBook(author: author);
 
-            Assert.IsFalse(createBook.IsSuccess);
-            Assert.AreEqual(HttpStatusCode.BadRequest, createBook.StatusCode);
-            Assert.AreEqual(Constants.AuthorMaxCharacters, createBook.Error.Message);
+            createBook.IsSuccess.Should().BeFalse();
+            createBook.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            createBook.Error.Message.Should().Be(Constants.AuthorMaxCharacters);
         }
     }
 }

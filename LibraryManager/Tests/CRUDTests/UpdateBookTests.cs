@@ -1,4 +1,5 @@
-﻿using LibraryManager.Core;
+﻿using FluentAssertions;
+using LibraryManager.Core;
 using LibraryManager.Core.Contracts;
 using NUnit.Framework;
 using System.Net;
@@ -23,8 +24,8 @@ namespace LibraryManager.Tests.CRUDTests
             };
 
             var updateBook = await _bookService.UpdateBook(createBook.Success.Id, updatedBook);
-            Assert.IsNotNull(updateBook, "Book with this id was not found");
-            Assert.AreEqual(HttpStatusCode.OK, updateBook.StatusCode);
+            updateBook.IsSuccess.Should().BeTrue();
+            updateBook.StatusCode.Should().Be(HttpStatusCode.OK);
             AssertBookProperties(updatedBook, updateBook.Success);
         }
 
@@ -32,6 +33,7 @@ namespace LibraryManager.Tests.CRUDTests
         public async Task UpdateBooksId_BadRequest()
         {
             var bookId = new Random().Next(1, 1000);
+            var errorMessage = string.Format(Constants.BookIdCantBeUpdated, bookId);
             var createBook = await _bookService.CreateBook(id: bookId);
 
             var updatedBook = new Book()
@@ -43,9 +45,9 @@ namespace LibraryManager.Tests.CRUDTests
             };
 
             var updateBook = await _bookService.UpdateBook(createBook.Success.Id, updatedBook);
-            Assert.IsFalse(updateBook.IsSuccess);
-            Assert.AreEqual(HttpStatusCode.BadRequest, updateBook.StatusCode);
-            Assert.AreEqual(string.Format(Constants.BookIdCantBeUpdated, bookId), updateBook.Error.Message);
+            updateBook.IsSuccess.Should().BeFalse();
+            updateBook.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            updateBook.Error.Message.Should().Be(errorMessage);
         }
     }
 }
