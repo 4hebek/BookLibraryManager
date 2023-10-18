@@ -20,7 +20,7 @@ namespace LibraryManager.Core
                 new MediaTypeWithQualityHeaderValue("application/json"));
         }
 
-        public async Task<Result<Book, Error>> CreateBook(Book book)
+        public async Task<Result<Book, Error>> Create2Book(Book book)
         {
             //var newBook = new Book()
             //{
@@ -36,8 +36,58 @@ namespace LibraryManager.Core
             return await ReadBook(response);
         }
 
+        public async Task<Result<Book, Error>> CreateBook(int? id = null, string title = "Book Title", string description = "Book Description", string author = "Book Author" )
+        {
+            var newBook = new Book()
+            {
+                Id = id ?? new Random().Next(1, 100000),
+                Title = title,
+                Description = description,
+                Author = author,
+            };
+
+            _inMemoryBooks.Add(newBook);
+
+            HttpResponseMessage response = await _client.PostAsJsonAsync("books", newBook);
+            return await ReadBook(response);
+        }
+
+        public async Task<Result<Book, Error>> CreateBook(Book book)
+        {
+            var newBook = new Book()
+            {
+                Id = book.Id ?? new Random().Next(1, 1000),
+                Title = book.Title ?? "Book Title",
+                Description = book.Description ?? "Book Description",
+                Author = book.Author ?? "Book Author",
+            };
+
+            _inMemoryBooks.Add(newBook);
+
+            HttpResponseMessage response = await _client.PostAsJsonAsync("books", newBook);
+            return await ReadBook(response);
+        }
+
 
         public async Task<Result<Book, Error>> GetBookById(int? bookId)
+        {
+            HttpResponseMessage response = await _client.GetAsync($"books/{GetBookId(bookId)}");
+            return await ReadBook(response);
+        }
+
+        public async Task<Result<Book, Error>> UpdateBook(int? bookId, Book book)
+        {  
+            HttpResponseMessage response = await _client.PutAsJsonAsync($"books/{GetBookId(bookId)}", book);
+            return await ReadBook(response);
+        }
+
+        public async Task<Result<Book, Error>> DeleteBook(int? bookId)
+        {
+            HttpResponseMessage response = await _client.DeleteAsync($"books/{GetBookId(bookId)}");
+            return await ReadBook(response);
+        }
+
+        public int? GetBookId(int? bookId)
         {
             var book = _inMemoryBooks.FirstOrDefault(b => b.Id == bookId);
 
@@ -46,27 +96,7 @@ namespace LibraryManager.Core
                 bookId = book.Id;
             }
 
-            HttpResponseMessage response = await _client.GetAsync($"books/{bookId}");
-            return await ReadBook(response);
-        }
-
-
-        public async Task<Book> UpdateBookAsync(int? bookId, Book book)
-        {
-            var getBook = _inMemoryBooks.FirstOrDefault(b => b.Id == bookId);
-            var response = await _client.PutAsJsonAsync($"books/{book.Id}", book);
-
-            var jsonResponse = await response.Content.ReadAsStringAsync();
-            return Newtonsoft.Json.JsonConvert.DeserializeObject<Book>(jsonResponse);;
-        }
-
-
-        public async Task<Result<Book, Error>> DeleteBookAsync(int? bookId)
-        {
-            var book = _inMemoryBooks.FirstOrDefault(b => b.Id == bookId);
-
-            HttpResponseMessage response = await _client.DeleteAsync($"books/{bookId}");
-            return await ReadBook(response);
+            return bookId;
         }
 
         public async Task<Result<Book, Error>> ReadBook(HttpResponseMessage response)

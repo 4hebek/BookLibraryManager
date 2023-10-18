@@ -10,5 +10,6 @@
         public const string TitleMaxCharacters = "Book.Title should not exceed 100 characters!\r\nParameter name: Book.Title";
         public const string AuthorMaxCharacters = "Book.Author should not exceed 30 characters!\r\nParameter name: Book.Author";
         public const string NoBookFound = @"Book with id {0} not found!";
+        public const string BookIdCantBeUpdated = "Book.Id cannot be updated!";
     }
 }
