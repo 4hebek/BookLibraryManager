@@ -1,4 +1,5 @@
-﻿using LibraryManager.Core.Contracts;
+﻿using LibraryManager.Core;
+using LibraryManager.Core.Contracts;
 using NUnit.Framework;
 using System.Net;
 
@@ -7,11 +8,8 @@ namespace LibraryManager.Tests.CRUDTests
     [TestFixture]
     public class CreateBookTests : TestBase
     {
-        //Book should be positive integer
-
         [Test]
-        // This test fails because the Author is not being recorded and is not as expected
-        public async Task CreateBook_IsSuccessful()
+        public async Task CreateBook_Ok()
         {
             var book = new Book()
             {
@@ -21,14 +19,13 @@ namespace LibraryManager.Tests.CRUDTests
                 Author = "Test",
             };
 
-            var createBook = await _bookService.CreateBookAsync(book);
+            var createBook = await _bookService.CreateBook(book);
             Assert.AreEqual(HttpStatusCode.OK, createBook.StatusCode);
             AssertBookProperties(book, createBook.Success);
         }
 
         [Test]
-        // I believe this test should error as it should be impossible to create a book with the same id but different properties
-        public async Task CreateBook_SameId_Error()
+        public async Task CreateBook_SameId_BadRequest()
         {
             var book = new Book()
             {
@@ -38,7 +35,7 @@ namespace LibraryManager.Tests.CRUDTests
                 Author = "Test",
             };
 
-            var createBook = await _bookService.CreateBookAsync(book);
+            var createBook = await _bookService.CreateBook(book);
 
             var secondBook = new Book()
             {
@@ -48,8 +45,10 @@ namespace LibraryManager.Tests.CRUDTests
                 Author = "Author 1",
             };
 
-            var secondCreateBook = await _bookService.CreateBookAsync(secondBook);
-            Assert.IsFalse(createBook.IsSuccess);
+            var secondCreateBook = await _bookService.CreateBook(secondBook);
+            Assert.IsFalse(secondCreateBook.IsSuccess);
+            Assert.AreEqual(HttpStatusCode.BadRequest, secondCreateBook.StatusCode);
+            Assert.AreEqual(string.Format(Constants.IdAlreadyExists, book.Id), secondCreateBook.Error.Message);
         }
 
         [Test]
@@ -66,10 +65,10 @@ namespace LibraryManager.Tests.CRUDTests
                 Author = author,
             };
 
-            var createBook = await _bookService.CreateBookAsync(book);
+            var createBook = await _bookService.CreateBook(book);
             Assert.IsFalse(createBook.IsSuccess);
             Assert.AreEqual(HttpStatusCode.BadRequest, createBook.StatusCode);
-            Assert.AreEqual("Book.Author is a required field.\r\nParameter name: book.Author", createBook.Error.Message);
+            Assert.AreEqual(Constants.AuthorRequired, createBook.Error.Message);
         }
 
         [Test]
@@ -85,10 +84,10 @@ namespace LibraryManager.Tests.CRUDTests
                 Author = "Test",
             };
 
-            var createBook = await _bookService.CreateBookAsync(book);
+            var createBook = await _bookService.CreateBook(book);
             Assert.IsFalse(createBook.IsSuccess);
             Assert.AreEqual(HttpStatusCode.BadRequest, createBook.StatusCode);
-            Assert.AreEqual("Book.Id should be a positive integer!\r\nParameter name: book.Id", createBook.Error.Message);
+            Assert.AreEqual(Constants.InvalidId, createBook.Error.Message);
         }
 
         [Test]
@@ -105,14 +104,13 @@ namespace LibraryManager.Tests.CRUDTests
                 Author = "Test",
             };
 
-            var createBook = await _bookService.CreateBookAsync(book);
+            var createBook = await _bookService.CreateBook(book);
             Assert.IsFalse(createBook.IsSuccess);
             Assert.AreEqual(HttpStatusCode.BadRequest, createBook.StatusCode);
-            Assert.AreEqual("Book.Title is a required field\r\nParameter name: Book.Title", createBook.Error.Message);
+            Assert.AreEqual(Constants.TitleRequired, createBook.Error.Message);
         }
 
         [Test]
-        // This test fails because the Author is not being recorded and is not as expected
         public async Task CreateBook_WithoutDescription_OK()
         {
             var book = new Book()
@@ -123,7 +121,7 @@ namespace LibraryManager.Tests.CRUDTests
                 Author = "Test",
             };
 
-            var createBook = await _bookService.CreateBookAsync(book);
+            var createBook = await _bookService.CreateBook(book);
             Assert.AreEqual(HttpStatusCode.OK, createBook.StatusCode);
             AssertBookProperties(book, createBook.Success);
         }
@@ -139,14 +137,14 @@ namespace LibraryManager.Tests.CRUDTests
                 Author = null,
             };
 
-            var createBook = await _bookService.CreateBookAsync(book);
+            var createBook = await _bookService.CreateBook(book);
             Assert.IsFalse(createBook.IsSuccess);
             Assert.AreEqual(HttpStatusCode.BadRequest, createBook.StatusCode);
-            Assert.AreEqual("Book.Author is a required field.\r\nParameter name: book.Author", createBook.Error.Message);
+            Assert.AreEqual(Constants.AuthorRequired, createBook.Error.Message);
         }
 
         [Test]
-        // This also fails when char length is 100 but shouldn't as that's the max allowed according to the error message
+        // Bug: This also fails when char length is 100 but shouldn't as that's the max allowed according to the error message
         public async Task CreateBook_TitleMaxCharacters_BadRequest()
         {
             var book = new Book()
@@ -157,14 +155,14 @@ namespace LibraryManager.Tests.CRUDTests
                 Author = "Author",
             };
 
-            var createBook = await _bookService.CreateBookAsync(book);
+            var createBook = await _bookService.CreateBook(book);
             Assert.IsFalse(createBook.IsSuccess);
             Assert.AreEqual(HttpStatusCode.BadRequest, createBook.StatusCode);
-            Assert.AreEqual("Book.Title should not exceed 100 characters!\r\nParameter name: Book.Title", createBook.Error.Message);
+            Assert.AreEqual(Constants.TitleMaxCharacters, createBook.Error.Message);
         }
 
         [Test]
-        // This throws a BadRequest when char length is 30 but shouldn't as that's the max allowed according to the error message
+        // Bug: This throws a BadRequest when char length is 30 but shouldn't as that's the max allowed according to the error message
         public async Task CreateBook_AuthorMaxCharacters_BadRequest()
         {
             var book = new Book()
@@ -175,10 +173,10 @@ namespace LibraryManager.Tests.CRUDTests
                 Author = GenerateRandomString(30),
             };
 
-            var createBook = await _bookService.CreateBookAsync(book);
+            var createBook = await _bookService.CreateBook(book);
             Assert.IsFalse(createBook.IsSuccess);
             Assert.AreEqual(HttpStatusCode.BadRequest, createBook.StatusCode);
-            Assert.AreEqual("Book.Author should not exceed 30 characters!\r\nParameter name: Book.Author", createBook.Error.Message);
+            Assert.AreEqual(Constants.AuthorMaxCharacters, createBook.Error.Message);
         }
     }
 }

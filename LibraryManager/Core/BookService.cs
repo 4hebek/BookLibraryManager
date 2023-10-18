@@ -1,4 +1,5 @@
 ﻿using LibraryManager.Core.Contracts;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
@@ -19,10 +20,8 @@ namespace LibraryManager.Core
                 new MediaTypeWithQualityHeaderValue("application/json"));
         }
 
-        public async Task<Result<Book, Error>> CreateBookAsync(Book book)
+        public async Task<Result<Book, Error>> CreateBook(Book book)
         {
-            _inMemoryBooks.Add(book);
-
             //var newBook = new Book()
             //{
             //    Id = book.Id ?? new Random().Next(1, 1000),
@@ -31,58 +30,72 @@ namespace LibraryManager.Core
             //    Author = book.Author ?? "Book Author",
             //};
 
-            HttpResponseMessage response = await _client.PostAsJsonAsync("books", book);
-            var status = response.StatusCode;
-            var jsonResponse = await response.Content.ReadAsStringAsync();
-
-            if (response.IsSuccessStatusCode)
-            {
-                var bookResult = Newtonsoft.Json.JsonConvert.DeserializeObject<Book>(jsonResponse);
-                return Result<Book, Error>.SuccessResponse(bookResult, status);
-            }
-            else
-            {
-                var errorResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<Error>(jsonResponse);
-                return Result<Book, Error>.ErrorResponse(errorResponse, status);
-            }
-        }
-
-        public async Task<Book> ReadBook(Book book)
-        {
             _inMemoryBooks.Add(book);
 
             HttpResponseMessage response = await _client.PostAsJsonAsync("books", book);
-            var jsonResponse = await response.Content.ReadAsStringAsync();
-            return Newtonsoft.Json.JsonConvert.DeserializeObject<Book>(jsonResponse);
+            return await ReadBook(response);
         }
 
-        public async Task<Book> GetBookAsync(int? bookId) 
+
+        public async Task<Result<Book, Error>> GetBookById(int? bookId)
         {
             var book = _inMemoryBooks.FirstOrDefault(b => b.Id == bookId);
-            HttpResponseMessage response = await _client.GetAsync(book.Id.ToString());
 
-            if (response.IsSuccessStatusCode) 
+            if (book != null)
             {
-                book = await response.Content.ReadAsAsync<Book>();
+                bookId = book.Id;
             }
-            return book;
+
+            HttpResponseMessage response = await _client.GetAsync($"books/{bookId}");
+            return await ReadBook(response);
         }
+
 
         public async Task<Book> UpdateBookAsync(int? bookId, Book book)
         {
             var getBook = _inMemoryBooks.FirstOrDefault(b => b.Id == bookId);
-            var response = await _client.PutAsJsonAsync($"books/{book.Id.ToString()}", book);
+            var response = await _client.PutAsJsonAsync($"books/{book.Id}", book);
 
             var jsonResponse = await response.Content.ReadAsStringAsync();
             return Newtonsoft.Json.JsonConvert.DeserializeObject<Book>(jsonResponse);;
         }
 
-        public async Task<HttpResponseMessage> DeleteBookAsync(int? bookId)
+
+        public async Task<Result<Book, Error>> DeleteBookAsync(int? bookId)
         {
             var book = _inMemoryBooks.FirstOrDefault(b => b.Id == bookId);
-            var response = await _client.DeleteAsync($"books/{book.Id}");
 
-            return response;
+            HttpResponseMessage response = await _client.DeleteAsync($"books/{bookId}");
+            return await ReadBook(response);
+        }
+
+        public async Task<Result<Book, Error>> ReadBook(HttpResponseMessage response)
+        {
+            try
+            {
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+
+                if (response != null)
+                {
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var bookResult = Newtonsoft.Json.JsonConvert.DeserializeObject<Book>(jsonResponse);
+                        return Result<Book, Error>.SuccessResponse(bookResult, response.StatusCode);
+                    }
+                    else
+                    {
+                        var errorResponse = await response.Content.ReadFromJsonAsync<Error>();
+                        return Result<Book, Error>.ErrorResponse(errorResponse, response.StatusCode);
+                    }
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                var errorResponse = new Error { Message = ex.Message };
+                return Result<Book, Error>.ErrorResponse(errorResponse, HttpStatusCode.InternalServerError);
+            }
+
+            return Result<Book, Error>.ErrorResponse(new Error { Message = "Failed to read book" }, HttpStatusCode.InternalServerError);
         }
     }
 }

@@ -17,7 +17,7 @@ namespace LibraryManager.Tests.CRUDTests
                 Author = "Test",
             };
 
-            var createBook = await _bookService.CreateBookAsync(book);
+            var createBook = await _bookService.CreateBook(book);
 
             var updatedBook = new Book()
             {
