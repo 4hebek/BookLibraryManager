@@ -59,8 +59,8 @@ namespace LibraryManager.Tests.CRUDTests
             getBook.Should().NotBeNull();
             getBook.StatusCode.Should().Be(HttpStatusCode.OK);
             getBook.Success.Count.Should().Be(1);
-            getBook.Success.FirstOrDefault().Title.Should().Be(title);
-            AssertBookProperties(createBook.Success, getBook.Success.FirstOrDefault());
+            getBook.Success[0].Title.Should().Be(title);
+            AssertBookProperties(createBook.Success, actualBook: getBook.Success[0]);
         }
 
         [Test]
@@ -77,8 +77,8 @@ namespace LibraryManager.Tests.CRUDTests
             getBook.Should().NotBeNull();
             getBook.StatusCode.Should().Be(HttpStatusCode.OK);
             getBook.Success.Count.Should().Be(2);
-            getBook.Success.FirstOrDefault().Title.Should().Be(getBook.Success.LastOrDefault().Title);
-            getBook.Success.FirstOrDefault().Id.Should().NotBe(getBook.Success.LastOrDefault().Id);
+            getBook.Success[0].Title.Should().Be(getBook.Success[1].Title);
+            getBook.Success[0].Id.Should().NotBe(getBook.Success[1].Id);
         }
 
         [Test]

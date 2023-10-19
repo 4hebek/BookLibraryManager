@@ -6,14 +6,16 @@ namespace LibraryManager.Core
 {
     public class BookService
     {
-        private HttpClient _client;
-        private string _url = "http://localhost:9000/api/";
-        private List<Book> _inMemoryBooks = new List<Book>(); // In-memory data store
+        private readonly HttpClient _client;
+        private readonly string _url = "http://localhost:9000/api/";
+        private readonly List<Book> _inMemoryBooks = new(); // In-memory data store
 
         public BookService()
         {
-            _client = new HttpClient();
-            _client.BaseAddress = new Uri(_url);
+            _client = new HttpClient
+            {
+                BaseAddress = new Uri(_url)
+            };
             _client.DefaultRequestHeaders.Accept.Clear();
             _client.DefaultRequestHeaders.Accept.Add(
                 new MediaTypeWithQualityHeaderValue("application/json"));
@@ -58,7 +60,7 @@ namespace LibraryManager.Core
             return await ReadBook(response);
         }
 
-        public async Task<Result<List<Book>, Error>> GetBooksByTitle(string title)
+        public async Task<Result<List<Book>, Error>> GetBooksByTitle(string? title)
         {
             HttpResponseMessage response = await _client.GetAsync($"books?title={title}");
             try
@@ -111,7 +113,7 @@ namespace LibraryManager.Core
             return bookId;
         }
 
-        public async Task<Result<Book, Error>> ReadBook(HttpResponseMessage response)
+        public static async Task<Result<Book, Error>> ReadBook(HttpResponseMessage response)
         {
             try
             {
