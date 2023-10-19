@@ -1,8 +1,5 @@
-﻿using FluentAssertions;
-using LibraryManager.Core;
+﻿using LibraryManager.Core;
 using LibraryManager.Core.Contracts;
-using NUnit.Framework;
-using System.Net;
 
 namespace LibraryManager.Tests.CRUDTests
 {
@@ -48,6 +45,48 @@ namespace LibraryManager.Tests.CRUDTests
             updateBook.IsSuccess.Should().BeFalse();
             updateBook.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             updateBook.Error.Message.Should().Be(errorMessage);
+        }
+
+        [Test]
+        // Bug: This throws a BadRequest when char length is 100 but shouldn't as that's the max allowed according to the error message
+        public async Task UpdateBook_TitleMaxCharacters_BadRequest()
+        {
+            var bookId = new Random().Next(1, 10000);
+            var createBook = await _bookService.CreateBook(id: bookId);
+
+            var updatedBook = new Book()
+            {
+                Id = bookId,
+                Title = GenerateRandomString(101),
+                Description = "TestUpdated",
+                Author = "TestUpdated",
+            };
+
+            var updateBook = await _bookService.UpdateBook(createBook.Success.Id, updatedBook);
+            updateBook.IsSuccess.Should().BeFalse();
+            updateBook.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            updateBook.Error.Message.Should().Be(Constants.TitleMaxCharacters);
+        }
+
+        [Test]
+        // Bug: This throws a BadRequest when char length is 30 but shouldn't as that's the max allowed according to the error message
+        public async Task UpdateBook_AuthorMaxCharacters_BadRequest()
+        {
+            var bookId = new Random().Next(1, 10000);
+            var createBook = await _bookService.CreateBook(id: bookId);
+
+            var updatedBook = new Book()
+            {
+                Id = bookId,
+                Title = "TestUpdated",
+                Description = "TestUpdated",
+                Author = GenerateRandomString(31)
+            };
+
+            var updateBook = await _bookService.UpdateBook(createBook.Success.Id, updatedBook);
+            updateBook.IsSuccess.Should().BeFalse();
+            updateBook.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            updateBook.Error.Message.Should().Be(Constants.AuthorMaxCharacters);
         }
     }
 }

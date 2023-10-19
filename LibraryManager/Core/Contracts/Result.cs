@@ -1,6 +1,4 @@
-﻿using System.Net;
-
-namespace LibraryManager.Core.Contracts
+﻿namespace LibraryManager.Core.Contracts
 {
     public class Result<TSuccess, TError>
     {

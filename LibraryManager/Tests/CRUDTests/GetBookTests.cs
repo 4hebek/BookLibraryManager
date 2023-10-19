@@ -1,8 +1,4 @@
-﻿using FluentAssertions;
-using LibraryManager.Core;
-using LibraryManager.Core.Contracts;
-using NUnit.Framework;
-using System.Net;
+﻿using LibraryManager.Core;
 
 namespace LibraryManager.Tests.CRUDTests
 {

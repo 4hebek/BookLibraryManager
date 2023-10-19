@@ -1,8 +1,5 @@
-﻿using FluentAssertions;
-using LibraryManager.Core;
+﻿using LibraryManager.Core;
 using LibraryManager.Core.Contracts;
-using NUnit.Framework;
-using System.Net;
 
 namespace LibraryManager.Tests.CRUDTests
 {
@@ -95,7 +92,7 @@ namespace LibraryManager.Tests.CRUDTests
         }
 
         [Test]
-        // Bug: This also fails when char length is 100 but shouldn't as that's the max allowed according to the error message
+        // Bug: This throws a BadRequest when char length is 100 but shouldn't as that's the max allowed according to the error message
         public async Task CreateBook_TitleMaxCharacters_BadRequest()
         {
             var title = GenerateRandomString(101);

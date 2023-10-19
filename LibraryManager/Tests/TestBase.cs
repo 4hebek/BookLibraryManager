@@ -1,6 +1,6 @@
-﻿using LibraryManager.Core;
+﻿using FluentAssertions.Execution;
+using LibraryManager.Core;
 using LibraryManager.Core.Contracts;
-using NUnit.Framework;
 
 namespace LibraryManager.Tests
 {
@@ -15,14 +15,15 @@ namespace LibraryManager.Tests
 
         public void AssertBookProperties(Book expectedBook, Book actualBook)
         {
-            Assert.Multiple(() =>
+            using (new AssertionScope())
             {
-                Assert.AreEqual(expectedBook.Id, actualBook.Id, "Id was not as expected");
+                actualBook.Id.Should().Be(expectedBook.Id);
+                actualBook.Title.Should().Be(expectedBook.Title);
+                actualBook.Description.Should().Be(expectedBook.Description);
+
                 // Bug: Author is not saved therefore this assert fails
-                //Assert.AreEqual(expectedBook.Author, actualBook.Author, "Author was not as expected");
-                Assert.AreEqual(expectedBook.Title, actualBook.Title, "Title was not as expected");
-                Assert.AreEqual(expectedBook.Description, actualBook.Description, "Description was not as expected");
-            });
+                //actualBook.Author.Should().Be(expectedBook.Author);
+            }
         }
 
         public string GenerateRandomString(int length)
